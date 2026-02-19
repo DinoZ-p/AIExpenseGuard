@@ -2,12 +2,13 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/fincoach"
-    SECRET_KEY: str = "change-me-to-a-random-secret-key"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    database_url: str
+    secret_key: str
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 1440
 
-    model_config = {"env_file": ".env"}
+    class Config:
+        env_file = ".env"
 
 
 settings = Settings()

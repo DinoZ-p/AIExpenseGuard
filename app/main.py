@@ -11,6 +11,6 @@ app.include_router(goals.router)
 app.include_router(budgets.router)
 
 
-@app.get("/")
-def root():
-    return {"message": "Welcome to FinCoach API"}
+@app.get("/health")
+def health():
+    return {"status": "ok"}
