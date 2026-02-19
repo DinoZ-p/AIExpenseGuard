@@ -1,21 +1,26 @@
-from datetime import date, datetime
+from datetime import date
 
 from pydantic import BaseModel
 
 
 class GoalCreate(BaseModel):
-    name: str
+    title: str
     target_amount: float
-    deadline: date
+    target_date: date
+    priority: int = 3
+    type: str = "mid"
+    comfort_floor: float | None = None
 
 
 class GoalOut(BaseModel):
     id: int
-    name: str
+    user_id: int
+    title: str
     target_amount: float
     current_amount: float
-    deadline: date
-    user_id: int
-    created_at: datetime
+    target_date: date
+    priority: int
+    type: str
+    comfort_floor: float | None
 
     model_config = {"from_attributes": True}

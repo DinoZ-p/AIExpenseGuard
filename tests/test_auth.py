@@ -2,7 +2,6 @@ def test_register(client):
     response = client.post("/auth/register", json={
         "email": "test@example.com",
         "password": "secret123",
-        "full_name": "Test User",
     })
     assert response.status_code == 201
     data = response.json()
@@ -11,7 +10,7 @@ def test_register(client):
 
 
 def test_register_duplicate_email(client):
-    payload = {"email": "dup@example.com", "password": "secret", "full_name": "Dup"}
+    payload = {"email": "dup@example.com", "password": "secret"}
     client.post("/auth/register", json=payload)
     response = client.post("/auth/register", json=payload)
     assert response.status_code == 400
@@ -21,7 +20,6 @@ def test_login(client):
     client.post("/auth/register", json={
         "email": "login@example.com",
         "password": "secret123",
-        "full_name": "Login User",
     })
     response = client.post("/auth/login", data={
         "username": "login@example.com",
@@ -35,7 +33,6 @@ def test_me(client):
     client.post("/auth/register", json={
         "email": "me@example.com",
         "password": "secret123",
-        "full_name": "Me User",
     })
     login = client.post("/auth/login", data={
         "username": "me@example.com",
