@@ -1,22 +1,17 @@
-from datetime import datetime
-
 from pydantic import BaseModel
 
 
 class BudgetCreate(BaseModel):
-    amount: float
-    month: int
-    year: int
     category_id: int
+    period: str  # weekly | monthly
+    limit_amount: float
 
 
 class BudgetOut(BaseModel):
     id: int
-    amount: float
-    month: int
-    year: int
-    category_id: int
     user_id: int
-    created_at: datetime
+    category_id: int
+    period: str
+    limit_amount: float
 
     model_config = {"from_attributes": True}

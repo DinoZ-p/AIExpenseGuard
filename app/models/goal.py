@@ -1,21 +1,16 @@
-from datetime import date, datetime
-
-from sqlalchemy import ForeignKey, Numeric, String, Date, DateTime, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Column, Integer, String, Float, Date, ForeignKey
 from app.database import Base
 
 
 class Goal(Base):
     __tablename__ = "goals"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100))
-    target_amount: Mapped[float] = mapped_column(Numeric(10, 2))
-    current_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
-    deadline: Mapped[date] = mapped_column(Date)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-
-    user: Mapped["User"] = relationship(back_populates="goals")
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    target_amount = Column(Float, nullable=False)
+    current_amount = Column(Float, default=0.0)
+    target_date = Column(Date, nullable=False)
+    priority = Column(Integer, default=3)          # 1-5
+    type = Column(String, default="mid")           # short | mid | long
+    comfort_floor = Column(Float, nullable=True)   # min monthly entertainment etc.
