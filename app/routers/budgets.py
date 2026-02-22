@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.database import get_db
 from app.models.budget import Budget
 from app.models.user import User
-from app.routers.auth import get_current_user
-from app.schemas.budget import BudgetCreate, BudgetOut
+from app.schemas.budget import BudgetCreate, BudgetResponse
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/budgets", tags=["budgets"])
 
 
-@router.post("/", response_model=BudgetOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=BudgetResponse, status_code=201)
 def create_budget(
     budget_in: BudgetCreate,
     db: Session = Depends(get_db),
@@ -23,7 +24,7 @@ def create_budget(
     return budget
 
 
-@router.get("/", response_model=list[BudgetOut])
+@router.get("/", response_model=List[BudgetResponse])
 def list_budgets(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -31,28 +32,15 @@ def list_budgets(
     return db.query(Budget).filter(Budget.user_id == current_user.id).all()
 
 
-@router.get("/{budget_id}", response_model=BudgetOut)
-def get_budget(
-    budget_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    budget = db.query(Budget).filter(
-        Budget.id == budget_id, Budget.user_id == current_user.id
-    ).first()
-    if not budget:
-        raise HTTPException(status_code=404, detail="Budget not found")
-    return budget
-
-
-@router.delete("/{budget_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{budget_id}", status_code=204)
 def delete_budget(
     budget_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     budget = db.query(Budget).filter(
-        Budget.id == budget_id, Budget.user_id == current_user.id
+        Budget.id == budget_id,
+        Budget.user_id == current_user.id,
     ).first()
     if not budget:
         raise HTTPException(status_code=404, detail="Budget not found")
