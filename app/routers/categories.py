@@ -1,29 +1,30 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.database import get_db
 from app.models.category import Category
 from app.models.user import User
-from app.routers.auth import get_current_user
-from app.schemas.category import CategoryCreate, CategoryOut
+from app.schemas.category import CategoryCreate, CategoryResponse
+from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 
 
-@router.post("/", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=CategoryResponse, status_code=201)
 def create_category(
     cat_in: CategoryCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    category = Category(**cat_in.model_dump(), user_id=current_user.id)
-    db.add(category)
+    cat = Category(**cat_in.model_dump(), user_id=current_user.id)
+    db.add(cat)
     db.commit()
-    db.refresh(category)
-    return category
+    db.refresh(cat)
+    return cat
 
 
-@router.get("/", response_model=list[CategoryOut])
+@router.get("/", response_model=List[CategoryResponse])
 def list_categories(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -31,15 +32,17 @@ def list_categories(
     return db.query(Category).filter(Category.user_id == current_user.id).all()
 
 
-@router.get("/{category_id}", response_model=CategoryOut)
-def get_category(
+@router.delete("/{category_id}", status_code=204)
+def delete_category(
     category_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    category = db.query(Category).filter(
-        Category.id == category_id, Category.user_id == current_user.id
+    cat = db.query(Category).filter(
+        Category.id == category_id,
+        Category.user_id == current_user.id,
     ).first()
-    if not category:
+    if not cat:
         raise HTTPException(status_code=404, detail="Category not found")
-    return category
+    db.delete(cat)
+    db.commit()

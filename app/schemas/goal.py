@@ -1,5 +1,4 @@
 from datetime import date
-
 from pydantic import BaseModel
 
 
@@ -12,15 +11,9 @@ class GoalCreate(BaseModel):
     comfort_floor: float | None = None
 
 
-class GoalOut(BaseModel):
+class GoalResponse(GoalCreate):
     id: int
-    user_id: int
-    title: str
-    target_amount: float
     current_amount: float
-    target_date: date
-    priority: int
-    type: str
-    comfort_floor: float | None
 
-    model_config = {"from_attributes": True}
+    class Config:
+        from_attributes = True
