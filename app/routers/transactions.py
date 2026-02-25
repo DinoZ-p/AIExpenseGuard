@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import csv
+import io
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -58,3 +61,35 @@ def delete_transaction(
         raise HTTPException(status_code=404, detail="Transaction not found")
     db.delete(txn)
     db.commit()
+
+
+@router.post("/import-csv")
+async def import_csv(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    content = await file.read()
+    reader = csv.DictReader(io.StringIO(content.decode("utf-8")))
+
+    imported = 0
+    errors = []
+
+    for i, row in enumerate(reader):
+        try:
+            txn = Transaction(
+                user_id=current_user.id,
+                amount=abs(float(row.get("Amount", 0))),
+                direction="expense" if float(row.get("Amount", 0)) < 0 else "income",
+                date=row.get("Date") or row.get("Transaction Date"),
+                merchant=row.get("Description", ""),
+                category_id=None,
+                note=f"Imported from CSV row {i}",
+            )
+            db.add(txn)
+            imported += 1
+        except Exception as e:
+            errors.append({"row": i, "error": str(e)})
+
+    db.commit()
+    return {"imported": imported, "errors": errors}
