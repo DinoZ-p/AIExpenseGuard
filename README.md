@@ -1,4 +1,3 @@
-# FinCoach
 
 A financial coaching API that tracks expenses, budgets, goals, and gives you analytics on your spending habits. Built with FastAPI + PostgreSQL.
 
