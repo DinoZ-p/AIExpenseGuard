@@ -55,7 +55,6 @@ uvicorn app.main:app --reload
 Then go to `http://localhost:8000/docs` to see all the endpoints.
 
 ## API endpoints
-
 **Auth:**
 - `POST /auth/register` - Create account
 - `POST /auth/login` - Get JWT token
