@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.routers import auth, categories, transactions, goals, budgets, analytics
 
-app = FastAPI(title="FinCoach", version="0.1.0")
+app = FastAPI(title="SpendingTrack", version="0.1.0")
 
 app.include_router(auth.router)
 app.include_router(categories.router)

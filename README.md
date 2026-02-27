@@ -29,10 +29,10 @@ pip install -r requirements.txt
 
 ### 2. Database
 
-Create a PostgreSQL database called `fincoach`, then create a `.env` file:
+Create a PostgreSQL database called `spendingtrack`, then create a `.env` file:
 
 ```
-DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/fincoach
+DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/spendingtrack
 SECRET_KEY=your-secret-key-change-this
 ```
 
