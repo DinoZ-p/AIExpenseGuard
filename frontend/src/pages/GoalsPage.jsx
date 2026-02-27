@@ -1,17 +1,35 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
-import { getGoals, createGoal, deleteGoal, getGoalProjection } from '../api'
+import { getGoals, createGoal, deleteGoal, getGoalProjection, getMe, updateMonthlySavings } from '../api'
 
 export default function GoalsPage() {
   const { token } = useAuth()
   const [goals, setGoals] = useState([])
   const [projections, setProjections] = useState({})
+  const [monthlySavings, setMonthlySavings] = useState('')
+  const [savedAmount, setSavedAmount] = useState(0)
   const [form, setForm] = useState({
     title: '', target_amount: '', target_date: '', priority: '3', type: 'mid'
   })
 
   function load() { getGoals(token).then(setGoals) }
-  useEffect(() => { load() }, [token])
+
+  useEffect(() => {
+    load()
+    getMe(token).then(user => {
+      setMonthlySavings(user.monthly_savings.toString())
+      setSavedAmount(user.monthly_savings)
+    })
+  }, [token])
+
+  async function handleSaveSavings(e) {
+    e.preventDefault()
+    const amount = parseFloat(monthlySavings)
+    if (isNaN(amount) || amount < 0) return
+    await updateMonthlySavings(token, amount)
+    setSavedAmount(amount)
+    setProjections({})
+  }
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -39,6 +57,19 @@ export default function GoalsPage() {
     <div>
       <h1>Goals</h1>
 
+      <div className="card">
+        <h3>Monthly Savings</h3>
+        <form onSubmit={handleSaveSavings} className="form-row">
+          <label>How much do you save per month?
+            <input type="number" step="0.01" value={monthlySavings}
+              onChange={e => setMonthlySavings(e.target.value)} required />
+          </label>
+          <button type="submit">Save</button>
+          {savedAmount > 0 && <span>Current: ${savedAmount.toFixed(2)}/mo</span>}
+        </form>
+      </div>
+
+      <h3>Add Goal</h3>
       <form onSubmit={handleAdd} className="form-row">
         <label>Title
           <input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
@@ -90,7 +121,7 @@ export default function GoalsPage() {
                         : <strong style={{color:'red'}}>Off track by {projections[g.id].days_behind} days</strong>
                       }
                       {' | '}Projected: {projections[g.id].projected_completion_date || 'N/A'}
-                      {' | '}Avg monthly savings: ${projections[g.id].avg_monthly_savings}
+                      {' | '}Your share: ${projections[g.id].monthly_share}/mo (priority {projections[g.id].priority} of {projections[g.id].total_priority} total)
                       {' | '}Remaining: ${projections[g.id].remaining}
                       {projections[g.id].required_monthly_to_hit_target &&
                         <span> | Need ${projections[g.id].required_monthly_to_hit_target}/mo to hit target</span>

@@ -20,15 +20,13 @@ for model in [Transaction, Budget, Goal, Category, User]:
 db.commit()
 
 # user
-user = User(email="demo@test.com", password_hash=hash_password("demo123"))
+user = User(email="demo@test.com", password_hash=hash_password("demo123"), monthly_savings=1200.0)
 db.add(user)
 db.commit()
 db.refresh(user)
 
 # categories
 categories_data = [
-    ("Salary",        "income",  False),
-    ("Freelance",     "income",  False),
     ("Rent",          "expense", True),
     ("Groceries",     "expense", True),
     ("Dining Out",    "expense", False),
@@ -89,23 +87,6 @@ db.add(Goal(
 # transactions — 3 months of data
 today = date.today()
 start = today - timedelta(days=90)
-
-# monthly income
-for month_offset in range(3):
-    month_start = start + timedelta(days=month_offset * 30)
-    db.add(Transaction(
-        user_id=user.id, category_id=cats["Salary"].id,
-        amount=5200, direction="income",
-        date=month_start + timedelta(days=random.randint(0, 2)),
-        merchant="Employer Inc",
-    ))
-    if random.random() > 0.5:
-        db.add(Transaction(
-            user_id=user.id, category_id=cats["Freelance"].id,
-            amount=random.randint(300, 800), direction="income",
-            date=month_start + timedelta(days=random.randint(10, 25)),
-            merchant="Freelance Client",
-        ))
 
 # monthly fixed expenses
 for month_offset in range(3):

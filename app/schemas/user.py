@@ -9,9 +9,14 @@ class UserCreate(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: str
+    monthly_savings: float
 
     class Config:
         from_attributes = True
+
+
+class MonthlySavingsUpdate(BaseModel):
+    monthly_savings: float
 
 
 class Token(BaseModel):
