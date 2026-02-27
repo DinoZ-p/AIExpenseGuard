@@ -1,5 +1,5 @@
 
-A financial coaching API that tracks expenses, budgets, goals, and gives you analytics on your spending habits. Built with FastAPI + PostgreSQL.
+A financial guarding API that tracks expenses, budgets, goals, and gives you analytics on your spending habits. Built with FastAPI + PostgreSQL.
 
 ## What it does
 
@@ -9,15 +9,7 @@ A financial coaching API that tracks expenses, budgets, goals, and gives you ana
 - **Analytics engine** - Savings rate, spending by category, overspend alerts, goal projections.
 - **Goal tracking** - Set a savings goal and the app projects when you'll hit it based on your actual savings pace.
 
-## Tech stack
 
-- **FastAPI** - Python web framework
-- **PostgreSQL** - Database
-- **SQLAlchemy** - ORM (classic Column style)
-- **Alembic** - Database migrations
-- **bcrypt** - Password hashing
-- **python-jose** - JWT tokens
-- **Pydantic** - Request/response validation
 
 ## How to run
 
@@ -54,24 +46,6 @@ uvicorn app.main:app --reload
 
 Then go to `http://localhost:8000/docs` to see all the endpoints.
 
-## API endpoints
-**Auth:**
-- `POST /auth/register` - Create account
-- `POST /auth/login` - Get JWT token
-
-**CRUD (all require auth):**
-- `POST/GET/DELETE /categories/`
-- `POST/GET/DELETE /transactions/` (GET supports filtering by date, category, direction)
-- `POST/GET/DELETE /goals/`
-- `POST/GET/DELETE /budgets/`
-- `POST /transactions/import-csv` - Upload bank CSV
-
-**Analytics (all require auth):**
-- `GET /analytics/savings-rate` - Income vs expenses
-- `GET /analytics/spending` - Breakdown by category
-- `GET /analytics/overspend` - Categories over budget
-- `GET /analytics/goal-projection/{goal_id}` - When will you hit your goal
-- `GET /analytics/report` - Everything combined
 
 ## How it's built
 
@@ -90,19 +64,4 @@ pytest -v
 
 Tests use SQLite in-memory so you don't need PostgreSQL running for tests.
 
-## Project structure
 
-```
-app/
-  config.py          # .env loading via pydantic-settings
-  database.py        # SQLAlchemy engine + session
-  main.py            # FastAPI app + router wiring
-  models/            # SQLAlchemy ORM models (5 tables)
-  schemas/           # Pydantic request/response models
-  routers/           # API endpoints (thin)
-  services/          # Business logic (fat)
-  utils/auth.py      # JWT + password hashing
-alembic/             # Database migrations
-scripts/seed.py      # Demo data generator
-tests/               # pytest tests
-```
