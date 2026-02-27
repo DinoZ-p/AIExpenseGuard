@@ -10,16 +10,8 @@ A financial huard API that tracks expenses, budgets, goals, and gives you analyt
 - **Analytics engine** - Savings rate, spending by category, overspend alerts, goal projections.
 - **Rules engine** - Automated alerts when you're over budget, savings rate is low, goals are off track, etc.
 - **Goal tracking** - Set a savings goal and the app projects when you'll hit it based on your actual savings pace.
-- **React frontend** - Simple dashboard with all features accessible from the browser.
 
-- **FastAPI** - Python web framework
-- **PostgreSQL** - Database
-- **SQLAlchemy** - ORM (classic Column style)
-- **Alembic** - Database migrations
-- **bcrypt** - Password hashing
-- **python-jose** - JWT tokens
-- **Pydantic** - Request/response validation
-- **React** - Frontend (Vite + React Router)
+
 
 ## How to run
 
