@@ -3,18 +3,13 @@ from sqlalchemy.orm import Session
 
 from app.models.goal import Goal
 from app.services.analytics import (
-    compute_savings_rate,
     get_spending_by_category,
     get_overspend_categories,
     project_goal_completion,
 )
 
 
-# ── Rule functions ────────────────────────────────────────────
-# Each rule takes (db, user_id, config) and returns an alert dict or None.
-
-
-def rule_budget_overspend(db: Session, user_id: int, config: dict) -> list[dict]:
+def rule_budget_overspend(db: Session, user_id: int, config: dict, **kwargs) -> list[dict]:
     """Alert when any category exceeds its budget limit."""
     days = config.get("lookback_days", 30)
     end = date.today()
@@ -32,32 +27,10 @@ def rule_budget_overspend(db: Session, user_id: int, config: dict) -> list[dict]
     return alerts
 
 
-def rule_low_savings_rate(db: Session, user_id: int, config: dict) -> list[dict]:
-    """Alert when savings rate drops below threshold."""
-    days = config.get("lookback_days", 30)
-    threshold = config.get("min_savings_rate", 0.10)  # 10%
-    end = date.today()
-    start = end - timedelta(days=days)
-
-    savings = compute_savings_rate(db, user_id, start, end)
-    if savings["income"] == 0:
-        return []
-
-    if savings["savings_rate"] < threshold:
-        severity = "high" if savings["savings_rate"] < 0 else "medium"
-        return [{
-            "rule": "low_savings_rate",
-            "severity": severity,
-            "message": f"Savings rate is {savings['savings_rate'] * 100:.1f}% (target: {threshold * 100:.0f}%)",
-            "data": savings,
-        }]
-    return []
-
-
-def rule_essential_spending_ratio(db: Session, user_id: int, config: dict) -> list[dict]:
+def rule_essential_spending_ratio(db: Session, user_id: int, config: dict, **kwargs) -> list[dict]:
     """Alert when non-essential spending is too high compared to essential."""
     days = config.get("lookback_days", 30)
-    max_nonessential_pct = config.get("max_nonessential_pct", 0.40)  # 40%
+    max_nonessential_pct = config.get("max_nonessential_pct", 0.40)
     end = date.today()
     start = end - timedelta(days=days)
 
@@ -84,13 +57,13 @@ def rule_essential_spending_ratio(db: Session, user_id: int, config: dict) -> li
     return []
 
 
-def rule_goal_off_track(db: Session, user_id: int, config: dict) -> list[dict]:
+def rule_goal_off_track(db: Session, user_id: int, config: dict, monthly_savings: float = 0) -> list[dict]:
     """Alert when any goal is projected to miss its target date."""
     goals = db.query(Goal).filter(Goal.user_id == user_id).all()
     alerts = []
 
     for goal in goals:
-        projection = project_goal_completion(db, user_id, goal.id)
+        projection = project_goal_completion(db, user_id, goal.id, monthly_savings)
         if not projection:
             continue
         if not projection.get("on_track", True):
@@ -105,38 +78,18 @@ def rule_goal_off_track(db: Session, user_id: int, config: dict) -> list[dict]:
     return alerts
 
 
-def rule_no_income(db: Session, user_id: int, config: dict) -> list[dict]:
-    """Alert when no income recorded in the lookback period."""
-    days = config.get("lookback_days", 30)
-    end = date.today()
-    start = end - timedelta(days=days)
-
-    savings = compute_savings_rate(db, user_id, start, end)
-    if savings["income"] == 0:
-        return [{
-            "rule": "no_income",
-            "severity": "high",
-            "message": f"No income recorded in the last {days} days",
-            "data": savings,
-        }]
-    return []
-
-
 # ── Rules registry ────────────────────────────────────────────
-# Each entry: (function, default config, enabled)
 
 RULES = [
     {"fn": rule_budget_overspend,        "config": {"lookback_days": 30}, "enabled": True},
-    {"fn": rule_low_savings_rate,        "config": {"lookback_days": 30, "min_savings_rate": 0.10}, "enabled": True},
     {"fn": rule_essential_spending_ratio, "config": {"lookback_days": 30, "max_nonessential_pct": 0.40}, "enabled": True},
     {"fn": rule_goal_off_track,          "config": {}, "enabled": True},
-    {"fn": rule_no_income,               "config": {"lookback_days": 30}, "enabled": True},
 ]
 
 
 # ── Engine ────────────────────────────────────────────────────
 
-def run_rules(db: Session, user_id: int) -> list[dict]:
+def run_rules(db: Session, user_id: int, monthly_savings: float = 0) -> list[dict]:
     """Loop through all active rules, collect alerts, return sorted by severity."""
     all_alerts = []
 
@@ -144,7 +97,7 @@ def run_rules(db: Session, user_id: int) -> list[dict]:
         if not rule["enabled"]:
             continue
         try:
-            alerts = rule["fn"](db, user_id, rule["config"])
+            alerts = rule["fn"](db, user_id, rule["config"], monthly_savings=monthly_savings)
             all_alerts.extend(alerts)
         except Exception as e:
             all_alerts.append({

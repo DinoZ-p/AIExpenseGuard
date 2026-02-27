@@ -7,7 +7,6 @@ from app.database import get_db
 from app.models.user import User
 from app.utils.auth import get_current_user
 from app.services.analytics import (
-    compute_savings_rate,
     get_spending_by_category,
     get_overspend_categories,
     project_goal_completion,
@@ -15,20 +14,6 @@ from app.services.analytics import (
 )
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
-
-
-@router.get("/savings-rate")
-def savings_rate(
-    start_date: date = Query(default=None),
-    end_date: date = Query(default=None),
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    if not end_date:
-        end_date = date.today()
-    if not start_date:
-        start_date = end_date - timedelta(days=30)
-    return compute_savings_rate(db, current_user.id, start_date, end_date)
 
 
 @router.get("/spending")
@@ -62,11 +47,12 @@ def overspend_alerts(
 @router.get("/goal-projection/{goal_id}")
 def goal_projection(
     goal_id: int,
-    lookback_days: int = Query(default=90),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = project_goal_completion(db, current_user.id, goal_id, lookback_days)
+    result = project_goal_completion(
+        db, current_user.id, goal_id, current_user.monthly_savings
+    )
     if not result:
         raise HTTPException(status_code=404, detail="Goal not found")
     return result
@@ -84,4 +70,7 @@ def full_report(
         end_date = date.today()
     if not start_date:
         start_date = end_date - timedelta(days=30)
-    return generate_full_report(db, current_user.id, start_date, end_date, goal_id)
+    return generate_full_report(
+        db, current_user.id, start_date, end_date,
+        current_user.monthly_savings, goal_id,
+    )

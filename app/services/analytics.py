@@ -15,9 +15,6 @@ def get_spending_by_category(
     start_date: date,
     end_date: date,
 ) -> list[dict]:
-    """
-    Returns: [{"category_id": 1, "category_name": "Dining", "total": 450.0, "is_essential": False}, ...]
-    """
     results = (
         db.query(
             Category.id,
@@ -47,22 +44,6 @@ def get_spending_by_category(
     ]
 
 
-def get_total_income(
-    db: Session, user_id: int, start_date: date, end_date: date
-) -> float:
-    result = (
-        db.query(func.coalesce(func.sum(Transaction.amount), 0))
-        .filter(
-            Transaction.user_id == user_id,
-            Transaction.direction == "income",
-            Transaction.date >= start_date,
-            Transaction.date <= end_date,
-        )
-        .scalar()
-    )
-    return float(result)
-
-
 def get_total_expenses(
     db: Session, user_id: int, start_date: date, end_date: date
 ) -> float:
@@ -79,37 +60,12 @@ def get_total_expenses(
     return float(result)
 
 
-def compute_savings_rate(
-    db: Session, user_id: int, start_date: date, end_date: date
-) -> dict:
-    """
-    Returns: {
-        "income": 5000.0,
-        "expenses": 3800.0,
-        "savings": 1200.0,
-        "savings_rate": 0.24,   # 24%
-        "period_days": 30
-    }
-    """
-    income = get_total_income(db, user_id, start_date, end_date)
-    expenses = get_total_expenses(db, user_id, start_date, end_date)
-    savings = income - expenses
-    rate = savings / income if income > 0 else 0.0
-
-    return {
-        "income": income,
-        "expenses": expenses,
-        "savings": savings,
-        "savings_rate": round(rate, 4),
-        "period_days": (end_date - start_date).days,
-    }
-
-
 def project_goal_completion(
-    db: Session, user_id: int, goal_id: int, lookback_days: int = 90
+    db: Session, user_id: int, goal_id: int, monthly_savings: float
 ) -> dict:
     """
-    Based on recent savings rate, when will this goal be hit?
+    Project when a goal will be reached based on user's manual monthly savings input.
+    Splits savings across all goals proportionally by priority.
     """
     goal = db.query(Goal).filter(
         Goal.id == goal_id, Goal.user_id == user_id
@@ -117,37 +73,38 @@ def project_goal_completion(
     if not goal:
         return None
 
-    end = date.today()
-    start = end - timedelta(days=lookback_days)
+    # get all goals to calculate priority-based split
+    all_goals = db.query(Goal).filter(Goal.user_id == user_id).all()
+    total_priority = sum(g.priority for g in all_goals)
 
-    savings_data = compute_savings_rate(db, user_id, start, end)
-
-    # normalize to monthly
-    daily_savings = savings_data["savings"] / max(savings_data["period_days"], 1)
-    monthly_savings = daily_savings * 30
+    # this goal's share of monthly savings
+    goal_share = monthly_savings * (goal.priority / total_priority) if total_priority > 0 else 0
+    daily_share = goal_share / 30
 
     remaining = goal.target_amount - goal.current_amount
 
-    if monthly_savings <= 0:
+    if goal_share <= 0 or remaining <= 0:
         return {
             "goal_title": goal.title,
             "target_amount": goal.target_amount,
             "current_amount": goal.current_amount,
-            "remaining": remaining,
-            "avg_monthly_savings": monthly_savings,
+            "remaining": round(remaining, 2),
+            "monthly_share": 0,
+            "priority": goal.priority,
+            "total_priority": total_priority,
             "projected_completion_date": None,
-            "days_until_projected": None,
             "target_date": goal.target_date.isoformat(),
-            "on_track": False,
+            "on_track": remaining <= 0,
             "days_behind": None,
             "required_monthly_to_hit_target": None,
-            "message": "Not saving — goal cannot be reached at current pace",
+            "message": "No savings allocated" if goal_share <= 0 else "Goal reached!",
         }
 
-    days_to_goal = (remaining / daily_savings) if daily_savings > 0 else float("inf")
-    projected_date = end + timedelta(days=int(days_to_goal))
+    days_to_goal = remaining / daily_share
+    today = date.today()
+    projected_date = today + timedelta(days=int(days_to_goal))
 
-    days_until_target = (goal.target_date - end).days
+    days_until_target = (goal.target_date - today).days
     months_until_target = max(days_until_target / 30, 0.1)
     required_monthly = remaining / months_until_target
 
@@ -159,9 +116,10 @@ def project_goal_completion(
         "target_amount": goal.target_amount,
         "current_amount": goal.current_amount,
         "remaining": round(remaining, 2),
-        "avg_monthly_savings": round(monthly_savings, 2),
+        "monthly_share": round(goal_share, 2),
+        "priority": goal.priority,
+        "total_priority": total_priority,
         "projected_completion_date": projected_date.isoformat(),
-        "days_until_projected": int(days_to_goal),
         "target_date": goal.target_date.isoformat(),
         "on_track": on_track,
         "days_behind": days_behind,
@@ -172,10 +130,6 @@ def project_goal_completion(
 def get_overspend_categories(
     db: Session, user_id: int, start_date: date, end_date: date
 ) -> list[dict]:
-    """
-    Compares actual spend vs budget limits.
-    Returns sorted list, worst overspend first.
-    """
     spending = get_spending_by_category(db, user_id, start_date, end_date)
 
     budgets = (
@@ -193,10 +147,9 @@ def get_overspend_categories(
         if not budget:
             continue
 
-        # normalize budget to match the period
         if budget.period == "monthly":
             adjusted_limit = budget.limit_amount * (period_days / 30)
-        else:  # weekly
+        else:
             adjusted_limit = budget.limit_amount * (period_days / 7)
 
         if cat["total"] > adjusted_limit:
@@ -217,25 +170,21 @@ def get_overspend_categories(
 
 def generate_full_report(
     db: Session, user_id: int, start_date: date, end_date: date,
-    goal_id: Optional[int] = None,
+    monthly_savings: float = 0.0, goal_id: Optional[int] = None,
 ) -> dict:
-    """
-    Master function: pulls together everything into one dict.
-    This is what gets sent to the LLM later.
-    """
-    savings = compute_savings_rate(db, user_id, start_date, end_date)
     spending = get_spending_by_category(db, user_id, start_date, end_date)
     overspends = get_overspend_categories(db, user_id, start_date, end_date)
 
     report = {
         "period": {"start": start_date.isoformat(), "end": end_date.isoformat()},
-        "savings": savings,
         "spending_by_category": spending,
-        "overspend_alerts": overspends[:5],  # top 5
+        "overspend_alerts": overspends[:5],
         "top_3_drivers": overspends[:3],
     }
 
     if goal_id:
-        report["goal_projection"] = project_goal_completion(db, user_id, goal_id)
+        report["goal_projection"] = project_goal_completion(
+            db, user_id, goal_id, monthly_savings
+        )
 
     return report
