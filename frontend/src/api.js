@@ -73,8 +73,12 @@ export const createGoal = (token, data) =>
 export const deleteGoal = (token, id) =>
   apiFetch(`/goals/${id}`, token, { method: 'DELETE' })
 
+// User
+export const getMe = (token) => apiFetch('/auth/me', token)
+export const updateMonthlySavings = (token, amount) =>
+  apiFetch('/auth/savings', token, { method: 'PUT', body: JSON.stringify({ monthly_savings: amount }) })
+
 // Analytics
-export const getSavingsRate = (token) => apiFetch('/analytics/savings-rate', token)
 export const getSpending = (token) => apiFetch('/analytics/spending', token)
 export const getOverspend = (token) => apiFetch('/analytics/overspend', token)
 export const getGoalProjection = (token, goalId) =>

@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
-import { getSavingsRate, getSpending, getAlerts } from '../api'
+import { getSpending, getAlerts } from '../api'
 
 export default function DashboardPage() {
   const { token } = useAuth()
-  const [savings, setSavings] = useState(null)
   const [spending, setSpending] = useState([])
   const [alerts, setAlerts] = useState([])
 
   useEffect(() => {
-    getSavingsRate(token).then(setSavings)
     getSpending(token).then(setSpending)
     getAlerts(token).then(setAlerts)
   }, [token])
@@ -17,15 +15,6 @@ export default function DashboardPage() {
   return (
     <div>
       <h1>Dashboard</h1>
-
-      {savings && (
-        <div className="card">
-          <h3>Savings Rate (Last 30 Days)</h3>
-          <p>Income: ${savings.income.toFixed(2)}</p>
-          <p>Expenses: ${savings.expenses.toFixed(2)}</p>
-          <p>Savings: ${savings.savings.toFixed(2)} ({(savings.savings_rate * 100).toFixed(1)}%)</p>
-        </div>
-      )}
 
       {alerts.length > 0 && (
         <div>
