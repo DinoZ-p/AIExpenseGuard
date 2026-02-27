@@ -1,5 +1,6 @@
 
-A financial guarding API that tracks expenses, budgets, goals, and gives you analytics on your spending habits. Built with FastAPI + PostgreSQL.
+
+A financial huard API that tracks expenses, budgets, goals, and gives you analytics on your spending habits. Built with FastAPI + PostgreSQL + React.
 
 ## What it does
 
@@ -7,61 +8,70 @@ A financial guarding API that tracks expenses, budgets, goals, and gives you ana
 - **CRUD for everything** - Categories, transactions, goals, budgets. Create, list, delete.
 - **CSV import** - Upload a bank statement CSV (Chase, Amex, Mint format) and it auto-imports all transactions.
 - **Analytics engine** - Savings rate, spending by category, overspend alerts, goal projections.
+- **Rules engine** - Automated alerts when you're over budget, savings rate is low, goals are off track, etc.
 - **Goal tracking** - Set a savings goal and the app projects when you'll hit it based on your actual savings pace.
 
 
 
 ## How to run
 
+### Backend setup (first time only)
+
 ```bash
-# 1. Clone and enter the project
 cd AIExpenseGuard
 
-# 2. Create virtual environment
+# Create virtual environment
 python -m venv venv
-source venv/Scripts/activate  # Windows
-# source venv/bin/activate    # Mac/Linux
 
-# 3. Install dependencies
+# Activate it
+.\venv\Scripts\activate    # Windows PowerShell
+# source venv/bin/activate # Mac/Linux
+
+# Install dependencies
 pip install -r requirements.txt
 
-# 4. Set up your .env file
+# Set up your .env file
 # DATABASE_URL=postgresql://postgres:yourpassword@localhost:5432/fincoach
 # SECRET_KEY=your-secret-key-change-this
 # ALGORITHM=HS256
 # ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
-# 5. Create the database
-# In psql: CREATE DATABASE fincoach;
+# Create the database (in psql)
+# CREATE DATABASE fincoach;
 
-# 6. Run migrations
+# Run migrations
 alembic upgrade head
 
-# 7. (Optional) Seed with demo data
+# (Optional) Seed with demo data
 python -m scripts.seed
+```
 
-# 8. Start the server
+### Frontend setup (first time only)
+
+```bash
+cd frontend
+npm install
+```
+
+### Running the app
+
+You need two terminals:
+
+**Terminal 1 — Backend:**
+```bash
+.\venv\Scripts\activate
 uvicorn app.main:app --reload
 ```
 
-Then go to `http://localhost:8000/docs` to see all the endpoints.
-
-
-## How it's built
-
-The project follows a layered architecture:
-
-- **Routes are thin** - Just validate input, call a service, return the result
-- **Services are fat** - All the real logic (analytics calculations, budget comparisons) lives in `app/services/`
-- **Every query filters by user** - Security fundamental. Users can never see each other's data.
-- **JWT auth** - Token-based. Register, get a token, send it in the Authorization header.
-
-## Running tests
-
+**Terminal 2 — Frontend:**
 ```bash
-pytest -v
+cd frontend
+npm run dev
 ```
 
-Tests use SQLite in-memory so you don't need PostgreSQL running for tests.
+Then open `http://localhost:5173` in your browser.
 
+If you seeded demo data, log in with `demo@test.com` / `demo123`.
+
+API docs are at `http://localhost:8000/docs`.
 

@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 
 class TransactionCreate(BaseModel):
-    category_id: int
+    category_id: int | None = None
     amount: float
     direction: str     # expense | income
     date: date

@@ -1,0 +1,37 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: sans-serif; background: #fafafa; color: #333; }
+
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: 200px; background: #f0f0f0; padding: 20px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.sidebar h2 { margin-bottom: 12px; }
+.sidebar a { text-decoration: none; color: #333; padding: 6px 0; }
+.sidebar a:hover { color: #007bff; }
+.content { flex: 1; padding: 20px; }
+
+input, select { padding: 6px; margin: 4px 0; border: 1px solid #ccc; border-radius: 3px; }
+button { padding: 6px 14px; cursor: pointer; border: 1px solid #999; border-radius: 3px; background: #fff; }
+button:hover { background: #eee; }
+.btn-delete { color: red; border-color: red; }
+
+table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background: #f5f5f5; }
+
+.card { border: 1px solid #ddd; padding: 16px; margin: 8px 0; border-radius: 4px; background: #fff; }
+.alert-high { border-left: 4px solid #d9534f; }
+.alert-medium { border-left: 4px solid #f0ad4e; }
+.alert-low { border-left: 4px solid #5bc0de; }
+
+.login-page { max-width: 360px; margin: 80px auto; }
+.login-page h1 { margin-bottom: 8px; }
+.login-page form { display: flex; flex-direction: column; gap: 8px; margin: 12px 0; }
+
+.form-row { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; margin: 10px 0; }
+.form-row label { display: flex; flex-direction: column; font-size: 0.85em; }
+
+.placeholder { color: #999; font-style: italic; padding: 40px; text-align: center; }
+
+.projection { background: #f9f9f9; padding: 10px; margin: 4px 0; font-size: 0.9em; }
