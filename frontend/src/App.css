@@ -35,3 +35,9 @@ th { background: #f5f5f5; }
 .placeholder { color: #999; font-style: italic; padding: 40px; text-align: center; }
 
 .projection { background: #f9f9f9; padding: 10px; margin: 4px 0; font-size: 0.9em; }
+
+.bar-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.bar-label { width: 120px; font-size: 0.85em; text-align: right; flex-shrink: 0; }
+.bar { height: 18px; background: #007bff; border-radius: 2px; min-width: 2px; }
+.bar.bar-essential { background: #28a745; }
+.bar-value { font-size: 0.85em; color: #555; }
