@@ -6,7 +6,6 @@ import TransactionsPage from './pages/TransactionsPage'
 import CategoriesPage from './pages/CategoriesPage'
 import BudgetsPage from './pages/BudgetsPage'
 import GoalsPage from './pages/GoalsPage'
-import ScenariosPage from './pages/ScenariosPage'
 import CoachPage from './pages/CoachPage'
 
 function App() {
@@ -24,8 +23,7 @@ function App() {
         <Link to="/budgets">Budgets</Link>
         <Link to="/goals">Goals</Link>
         <hr />
-        <Link to="/scenarios">Scenarios</Link>
-        <Link to="/coach">AI Coach</Link>
+        <Link to="/coach">AI Advisor</Link>
         <hr />
         <button onClick={logout}>Logout</button>
       </nav>
@@ -36,7 +34,6 @@ function App() {
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/scenarios" element={<ScenariosPage />} />
           <Route path="/coach" element={<CoachPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

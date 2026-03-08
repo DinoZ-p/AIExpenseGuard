@@ -109,3 +109,7 @@ export const getReport = (token) => apiFetch('/analytics/report', token)
 
 // Rules
 export const getAlerts = (token) => apiFetch('/rules/alerts', token)
+
+// Advisor
+export const chatWithAdvisor = (token, question, history) =>
+  apiFetch('/advisor/chat', token, { method: 'POST', body: JSON.stringify({ question, history }) })
