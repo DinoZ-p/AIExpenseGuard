@@ -11,6 +11,10 @@ class GoalCreate(BaseModel):
     comfort_floor: float | None = None
 
 
+class GoalUpdate(BaseModel):
+    current_amount: float
+
+
 class GoalResponse(GoalCreate):
     id: int
     current_amount: float

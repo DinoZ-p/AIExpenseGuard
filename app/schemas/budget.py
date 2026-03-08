@@ -7,6 +7,11 @@ class BudgetCreate(BaseModel):
     limit_amount: float
 
 
+class BudgetUpdate(BaseModel):
+    period: str | None = None
+    limit_amount: float | None = None
+
+
 class BudgetResponse(BudgetCreate):
     id: int
 

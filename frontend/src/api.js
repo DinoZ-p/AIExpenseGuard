@@ -12,6 +12,13 @@ async function apiFetch(path, token, options = {}) {
   return res.json()
 }
 
+function buildQs(params) {
+  const qs = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([_, v]) => v))
+  ).toString()
+  return qs ? '?' + qs : ''
+}
+
 // Auth
 export function registerUser(email, password) {
   return apiFetch('/auth/register', null, {
@@ -31,6 +38,11 @@ export function loginUser(email, password) {
   })
 }
 
+// User
+export const getMe = (token) => apiFetch('/auth/me', token)
+export const updateMonthlySavings = (token, amount) =>
+  apiFetch('/auth/savings', token, { method: 'PUT', body: JSON.stringify({ monthly_savings: amount }) })
+
 // Categories
 export const getCategories = (token) => apiFetch('/categories/', token)
 export const createCategory = (token, data) =>
@@ -39,14 +51,12 @@ export const deleteCategory = (token, id) =>
   apiFetch(`/categories/${id}`, token, { method: 'DELETE' })
 
 // Transactions
-export const getTransactions = (token, params = {}) => {
-  const qs = new URLSearchParams(
-    Object.fromEntries(Object.entries(params).filter(([_, v]) => v))
-  ).toString()
-  return apiFetch(`/transactions/${qs ? '?' + qs : ''}`, token)
-}
+export const getTransactions = (token, params = {}) =>
+  apiFetch(`/transactions/${buildQs(params)}`, token)
 export const createTransaction = (token, data) =>
   apiFetch('/transactions/', token, { method: 'POST', body: JSON.stringify(data) })
+export const updateTransaction = (token, id, data) =>
+  apiFetch(`/transactions/${id}`, token, { method: 'PATCH', body: JSON.stringify(data) })
 export const deleteTransaction = (token, id) =>
   apiFetch(`/transactions/${id}`, token, { method: 'DELETE' })
 export const importCSV = (token, file) => {
@@ -58,11 +68,25 @@ export const importCSV = (token, file) => {
     body: formData,
   }).then(r => r.json())
 }
+export function exportTransactions(token, params = {}) {
+  const qs = buildQs(params)
+  const url = `/transactions/export${qs}`
+  return fetch(url, { headers: { 'Authorization': `Bearer ${token}` } })
+    .then(r => r.blob())
+    .then(blob => {
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = 'transactions.csv'
+      a.click()
+    })
+}
 
 // Budgets
 export const getBudgets = (token) => apiFetch('/budgets/', token)
 export const createBudget = (token, data) =>
   apiFetch('/budgets/', token, { method: 'POST', body: JSON.stringify(data) })
+export const updateBudget = (token, id, data) =>
+  apiFetch(`/budgets/${id}`, token, { method: 'PATCH', body: JSON.stringify(data) })
 export const deleteBudget = (token, id) =>
   apiFetch(`/budgets/${id}`, token, { method: 'DELETE' })
 
@@ -70,16 +94,14 @@ export const deleteBudget = (token, id) =>
 export const getGoals = (token) => apiFetch('/goals/', token)
 export const createGoal = (token, data) =>
   apiFetch('/goals/', token, { method: 'POST', body: JSON.stringify(data) })
+export const updateGoal = (token, id, data) =>
+  apiFetch(`/goals/${id}`, token, { method: 'PATCH', body: JSON.stringify(data) })
 export const deleteGoal = (token, id) =>
   apiFetch(`/goals/${id}`, token, { method: 'DELETE' })
 
-// User
-export const getMe = (token) => apiFetch('/auth/me', token)
-export const updateMonthlySavings = (token, amount) =>
-  apiFetch('/auth/savings', token, { method: 'PUT', body: JSON.stringify({ monthly_savings: amount }) })
-
 // Analytics
-export const getSpending = (token) => apiFetch('/analytics/spending', token)
+export const getSpending = (token, params = {}) =>
+  apiFetch(`/analytics/spending${buildQs(params)}`, token)
 export const getOverspend = (token) => apiFetch('/analytics/overspend', token)
 export const getGoalProjection = (token, goalId) =>
   apiFetch(`/analytics/goal-projection/${goalId}`, token)

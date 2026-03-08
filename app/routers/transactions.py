@@ -3,13 +3,14 @@ import io
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
 from app.models.transaction import Transaction
 from app.models.user import User
-from app.schemas.transaction import TransactionCreate, TransactionResponse
+from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
 from app.utils.auth import get_current_user
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
@@ -26,6 +27,34 @@ def create_transaction(
     db.commit()
     db.refresh(txn)
     return txn
+
+
+@router.get("/export")
+def export_transactions(
+    start_date: date = None,
+    end_date: date = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    query = db.query(Transaction).filter(Transaction.user_id == current_user.id)
+    if start_date:
+        query = query.filter(Transaction.date >= start_date)
+    if end_date:
+        query = query.filter(Transaction.date <= end_date)
+    transactions = query.order_by(Transaction.date.desc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "date", "amount", "direction", "merchant", "note", "category_id"])
+    for t in transactions:
+        writer.writerow([t.id, t.date, t.amount, t.direction, t.merchant or "", t.note or "", t.category_id or ""])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=transactions.csv"},
+    )
 
 
 @router.get("/", response_model=List[TransactionResponse])
@@ -46,7 +75,27 @@ def list_transactions(
         query = query.filter(Transaction.category_id == category_id)
     if direction:
         query = query.filter(Transaction.direction == direction)
-    return query.all()
+    return query.order_by(Transaction.date.desc()).all()
+
+
+@router.patch("/{transaction_id}", response_model=TransactionResponse)
+def update_transaction(
+    transaction_id: int,
+    txn_in: TransactionUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    txn = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.user_id == current_user.id,
+    ).first()
+    if not txn:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    for field, value in txn_in.model_dump(exclude_none=True).items():
+        setattr(txn, field, value)
+    db.commit()
+    db.refresh(txn)
+    return txn
 
 
 @router.delete("/{transaction_id}", status_code=204)

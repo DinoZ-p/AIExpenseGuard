@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
-import { getBudgets, createBudget, deleteBudget, getCategories } from '../api'
+import { getBudgets, createBudget, deleteBudget, updateBudget, getCategories } from '../api'
 
 export default function BudgetsPage() {
   const { token } = useAuth()
   const [budgets, setBudgets] = useState([])
   const [categories, setCategories] = useState([])
+  const [editing, setEditing] = useState({})  // { budgetId: { period, limit_amount } }
   const [form, setForm] = useState({ category_id: '', period: 'monthly', limit_amount: '' })
 
   function load() {
@@ -27,6 +28,21 @@ export default function BudgetsPage() {
 
   async function handleDelete(id) {
     await deleteBudget(token, id)
+    load()
+  }
+
+  function startEdit(b) {
+    setEditing(prev => ({ ...prev, [b.id]: { period: b.period, limit_amount: b.limit_amount.toString() } }))
+  }
+
+  function cancelEdit(id) {
+    setEditing(prev => { const c = { ...prev }; delete c[id]; return c })
+  }
+
+  async function saveEdit(id) {
+    const e = editing[id]
+    await updateBudget(token, id, { period: e.period, limit_amount: parseFloat(e.limit_amount) })
+    cancelEdit(id)
     load()
   }
 
@@ -60,14 +76,38 @@ export default function BudgetsPage() {
       <table>
         <thead><tr><th>Category</th><th>Period</th><th>Limit</th><th></th></tr></thead>
         <tbody>
-          {budgets.map(b => (
-            <tr key={b.id}>
-              <td>{catName(b.category_id)}</td>
-              <td>{b.period}</td>
-              <td>${b.limit_amount.toFixed(2)}</td>
-              <td><button className="btn-delete" onClick={() => handleDelete(b.id)}>X</button></td>
-            </tr>
-          ))}
+          {budgets.map(b => {
+            const e = editing[b.id]
+            return e ? (
+              <tr key={b.id}>
+                <td>{catName(b.category_id)}</td>
+                <td>
+                  <select value={e.period} onChange={ev => setEditing(prev => ({ ...prev, [b.id]: { ...prev[b.id], period: ev.target.value } }))}>
+                    <option value="monthly">Monthly</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" step="0.01" value={e.limit_amount} style={{ width: 90 }}
+                    onChange={ev => setEditing(prev => ({ ...prev, [b.id]: { ...prev[b.id], limit_amount: ev.target.value } }))} />
+                </td>
+                <td style={{ display: 'flex', gap: 4 }}>
+                  <button onClick={() => saveEdit(b.id)}>Save</button>
+                  <button onClick={() => cancelEdit(b.id)}>Cancel</button>
+                </td>
+              </tr>
+            ) : (
+              <tr key={b.id}>
+                <td>{catName(b.category_id)}</td>
+                <td>{b.period}</td>
+                <td>${b.limit_amount.toFixed(2)}</td>
+                <td style={{ display: 'flex', gap: 4 }}>
+                  <button onClick={() => startEdit(b)}>Edit</button>
+                  <button className="btn-delete" onClick={() => handleDelete(b.id)}>X</button>
+                </td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

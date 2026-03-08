@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
-import { getGoals, createGoal, deleteGoal, getGoalProjection, getMe, updateMonthlySavings } from '../api'
+import { getGoals, createGoal, updateGoal, deleteGoal, getGoalProjection, getMe, updateMonthlySavings } from '../api'
 
 export default function GoalsPage() {
   const { token } = useAuth()
@@ -8,6 +8,7 @@ export default function GoalsPage() {
   const [projections, setProjections] = useState({})
   const [monthlySavings, setMonthlySavings] = useState('')
   const [savedAmount, setSavedAmount] = useState(0)
+  const [editingAmount, setEditingAmount] = useState({})  // { goalId: value }
   const [form, setForm] = useState({
     title: '', target_amount: '', target_date: '', priority: '3', type: 'mid'
   })
@@ -39,6 +40,15 @@ export default function GoalsPage() {
       priority: parseInt(form.priority),
     })
     setForm({ title: '', target_amount: '', target_date: '', priority: '3', type: 'mid' })
+    load()
+  }
+
+  async function handleUpdateAmount(goalId) {
+    const val = parseFloat(editingAmount[goalId])
+    if (isNaN(val) || val < 0) return
+    await updateGoal(token, goalId, { current_amount: val })
+    setEditingAmount(prev => { const c = { ...prev }; delete c[goalId]; return c })
+    setProjections(prev => { const c = { ...prev }; delete c[goalId]; return c })
     load()
   }
 
@@ -105,7 +115,23 @@ export default function GoalsPage() {
               <tr key={g.id}>
                 <td>{g.title}</td>
                 <td>${g.target_amount.toFixed(2)}</td>
-                <td>${g.current_amount.toFixed(2)}</td>
+                <td>
+                  {editingAmount[g.id] !== undefined ? (
+                    <span style={{ display: 'flex', gap: 4 }}>
+                      <input type="number" step="0.01" style={{ width: 80 }}
+                        value={editingAmount[g.id]}
+                        onChange={e => setEditingAmount(prev => ({ ...prev, [g.id]: e.target.value }))} />
+                      <button onClick={() => handleUpdateAmount(g.id)}>Save</button>
+                      <button onClick={() => setEditingAmount(prev => { const c = { ...prev }; delete c[g.id]; return c })}>Cancel</button>
+                    </span>
+                  ) : (
+                    <span onClick={() => setEditingAmount(prev => ({ ...prev, [g.id]: g.current_amount.toString() }))}
+                      style={{ cursor: 'pointer', textDecoration: 'underline dotted' }}
+                      title="Click to edit">
+                      ${g.current_amount.toFixed(2)}
+                    </span>
+                  )}
+                </td>
                 <td>{g.target_date}</td>
                 <td>{g.priority}</td>
                 <td>{g.type}</td>

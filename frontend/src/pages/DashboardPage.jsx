@@ -2,19 +2,46 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
 import { getSpending, getAlerts } from '../api'
 
+function getDefaultDates() {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - 30)
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0],
+  }
+}
+
 export default function DashboardPage() {
   const { token } = useAuth()
+  const defaults = getDefaultDates()
+  const [startDate, setStartDate] = useState(defaults.start)
+  const [endDate, setEndDate] = useState(defaults.end)
   const [spending, setSpending] = useState([])
   const [alerts, setAlerts] = useState([])
 
-  useEffect(() => {
-    getSpending(token).then(setSpending)
+  function load() {
+    getSpending(token, { start_date: startDate, end_date: endDate }).then(setSpending)
     getAlerts(token).then(setAlerts)
-  }, [token])
+  }
+
+  useEffect(() => { load() }, [token])
+
+  const maxSpend = Math.max(...spending.map(s => s.total), 1)
 
   return (
     <div>
       <h1>Dashboard</h1>
+
+      <div className="form-row" style={{ marginBottom: 16 }}>
+        <label>From
+          <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+        </label>
+        <label>To
+          <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        </label>
+        <button onClick={load}>Apply</button>
+      </div>
 
       {alerts.length > 0 && (
         <div>
@@ -28,7 +55,20 @@ export default function DashboardPage() {
       )}
 
       <h3>Spending by Category</h3>
-      <table>
+      <div className="card">
+        {spending.filter(s => s.total > 0).map(s => (
+          <div key={s.category_id} className="bar-row">
+            <span className="bar-label">{s.category_name}</span>
+            <div
+              className={`bar ${s.is_essential ? 'bar-essential' : ''}`}
+              style={{ width: `${(s.total / maxSpend) * 300}px` }}
+            />
+            <span className="bar-value">${s.total.toFixed(0)}</span>
+          </div>
+        ))}
+      </div>
+
+      <table style={{ marginTop: 12 }}>
         <thead><tr><th>Category</th><th>Amount</th><th>Essential</th></tr></thead>
         <tbody>
           {spending.map(s => (
