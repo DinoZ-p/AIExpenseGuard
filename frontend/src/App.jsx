@@ -7,6 +7,7 @@ import CategoriesPage from './pages/CategoriesPage'
 import BudgetsPage from './pages/BudgetsPage'
 import GoalsPage from './pages/GoalsPage'
 import CoachPage from './pages/CoachPage'
+import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const { token, logout } = useAuth()
@@ -24,6 +25,7 @@ function App() {
         <Link to="/goals">Goals</Link>
         <hr />
         <Link to="/coach">AI Advisor</Link>
+        <Link to="/settings">Settings</Link>
         <hr />
         <button onClick={logout}>Logout</button>
       </nav>
@@ -35,6 +37,7 @@ function App() {
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/coach" element={<CoachPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
