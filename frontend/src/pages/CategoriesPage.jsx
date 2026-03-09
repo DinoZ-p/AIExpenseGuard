@@ -6,21 +6,37 @@ export default function CategoriesPage() {
   const { token } = useAuth()
   const [categories, setCategories] = useState([])
   const [form, setForm] = useState({ name: '', type: 'expense', is_essential: false })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  function load() { getCategories(token).then(setCategories) }
+  async function load() {
+    setLoading(true)
+    try {
+      setCategories(await getCategories(token))
+    } finally {
+      setLoading(false)
+    }
+  }
   useEffect(() => { load() }, [token])
 
   async function handleAdd(e) {
     e.preventDefault()
-    await createCategory(token, form)
-    setForm({ name: '', type: 'expense', is_essential: false })
-    load()
+    setError('')
+    try {
+      await createCategory(token, form)
+      setForm({ name: '', type: 'expense', is_essential: false })
+      load()
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   async function handleDelete(id) {
     await deleteCategory(token, id)
     load()
   }
+
+  if (loading) return <div className="loading">Loading categories…</div>
 
   return (
     <div>
@@ -43,6 +59,7 @@ export default function CategoriesPage() {
         </label>
         <button type="submit">Add</button>
       </form>
+      {error && <div className="msg-error">{error}</div>}
 
       <table>
         <thead><tr><th>Name</th><th>Type</th><th>Essential</th><th></th></tr></thead>
