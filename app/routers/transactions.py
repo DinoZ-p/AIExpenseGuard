@@ -63,6 +63,9 @@ def list_transactions(
     end_date: date = None,
     category_id: int = None,
     direction: str = None,
+    merchant: str = None,
+    skip: int = 0,
+    limit: int = 50,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -75,7 +78,9 @@ def list_transactions(
         query = query.filter(Transaction.category_id == category_id)
     if direction:
         query = query.filter(Transaction.direction == direction)
-    return query.order_by(Transaction.date.desc()).all()
+    if merchant:
+        query = query.filter(Transaction.merchant.ilike(f"%{merchant}%"))
+    return query.order_by(Transaction.date.desc()).offset(skip).limit(limit).all()
 
 
 @router.patch("/{transaction_id}", response_model=TransactionResponse)

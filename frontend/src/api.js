@@ -113,3 +113,4 @@ export const getAlerts = (token) => apiFetch('/rules/alerts', token)
 // Advisor
 export const chatWithAdvisor = (token, question, history) =>
   apiFetch('/advisor/chat', token, { method: 'POST', body: JSON.stringify({ question, history }) })
+export const getMonthlyTrend = (token, months = 6) => apiFetch('/analytics/monthly-trend?months=' + months, token)

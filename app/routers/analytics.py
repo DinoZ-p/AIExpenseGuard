@@ -7,6 +7,7 @@ from app.database import get_db
 from app.models.user import User
 from app.utils.auth import get_current_user
 from app.services.analytics import (
+    get_monthly_trend,
     get_spending_by_category,
     get_overspend_categories,
     project_goal_completion,
@@ -74,3 +75,12 @@ def full_report(
         db, current_user.id, start_date, end_date,
         current_user.monthly_savings, goal_id,
     )
+
+
+@router.get("/monthly-trend")
+def monthly_trend(
+    months: int = 6,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return get_monthly_trend(db, current_user.id, months)

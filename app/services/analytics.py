@@ -188,3 +188,29 @@ def generate_full_report(
         )
 
     return report
+
+
+def get_monthly_trend(db: Session, user_id: int, months: int = 6) -> list[dict]:
+    today = date.today()
+    result = []
+    for i in range(months - 1, -1, -1):
+        month = today.month - i
+        year = today.year
+        while month <= 0:
+            month += 12
+            year -= 1
+        start = date(year, month, 1)
+        if month == 12:
+            end = date(year + 1, 1, 1) - timedelta(days=1)
+        else:
+            end = date(year, month + 1, 1) - timedelta(days=1)
+        if end > today:
+            end = today
+        total = db.query(func.coalesce(func.sum(Transaction.amount), 0)).filter(
+            Transaction.user_id == user_id,
+            Transaction.direction == "expense",
+            Transaction.date >= start,
+            Transaction.date <= end,
+        ).scalar()
+        result.append({"month": start.strftime("%b %Y"), "total": float(total)})
+    return result

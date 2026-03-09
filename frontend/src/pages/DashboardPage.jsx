@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../AuthContext'
-import { getSpending, getAlerts } from '../api'
+import { getSpending, getAlerts, getMonthlyTrend } from '../api'
 
 function getDefaultDates() {
   const end = new Date()
@@ -19,15 +19,21 @@ export default function DashboardPage() {
   const [endDate, setEndDate] = useState(defaults.end)
   const [spending, setSpending] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [trend, setTrend] = useState([])
 
   function load() {
     getSpending(token, { start_date: startDate, end_date: endDate }).then(setSpending)
     getAlerts(token).then(setAlerts)
+    getMonthlyTrend(token).then(setTrend)
   }
 
   useEffect(() => { load() }, [token])
 
   const maxSpend = Math.max(...spending.map(s => s.total), 1)
+  const totalSpent = spending.reduce((sum, s) => sum + s.total, 0)
+  const essentialSpent = spending.filter(s => s.is_essential).reduce((sum, s) => sum + s.total, 0)
+  const nonEssentialSpent = totalSpent - essentialSpent
+  const maxTrend = Math.max(...trend.map(t => t.total), 1)
 
   return (
     <div>
@@ -41,6 +47,25 @@ export default function DashboardPage() {
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </label>
         <button onClick={load}>Apply</button>
+      </div>
+
+      <div className="summary-row">
+        <div className="card summary-card">
+          <div className="summary-label">Total Spent</div>
+          <div className="summary-value">${totalSpent.toFixed(0)}</div>
+        </div>
+        <div className="card summary-card">
+          <div className="summary-label">Essential</div>
+          <div className="summary-value" style={{ color: '#28a745' }}>${essentialSpent.toFixed(0)}</div>
+        </div>
+        <div className="card summary-card">
+          <div className="summary-label">Non-Essential</div>
+          <div className="summary-value" style={{ color: '#dc3545' }}>${nonEssentialSpent.toFixed(0)}</div>
+        </div>
+        <div className="card summary-card">
+          <div className="summary-label">Alerts</div>
+          <div className="summary-value" style={{ color: alerts.length > 0 ? '#dc3545' : '#28a745' }}>{alerts.length}</div>
+        </div>
       </div>
 
       {alerts.length > 0 && (
@@ -68,18 +93,24 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <table style={{ marginTop: 12 }}>
-        <thead><tr><th>Category</th><th>Amount</th><th>Essential</th></tr></thead>
-        <tbody>
-          {spending.map(s => (
-            <tr key={s.category_id}>
-              <td>{s.category_name}</td>
-              <td>${s.total.toFixed(2)}</td>
-              <td>{s.is_essential ? 'Yes' : 'No'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {trend.length > 0 && (
+        <>
+          <h3>Monthly Spending Trend</h3>
+          <div className="card">
+            <div className="trend-chart">
+              {trend.map(t => (
+                <div key={t.month} className="trend-col">
+                  <span className="trend-value">${t.total.toFixed(0)}</span>
+                  <div className="trend-bar-wrap">
+                    <div className="trend-bar" style={{ height: `${(t.total / maxTrend) * 120}px` }} />
+                  </div>
+                  <span className="trend-label">{t.month}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
