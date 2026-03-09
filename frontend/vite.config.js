@@ -12,6 +12,7 @@ export default defineConfig({
       '/goals': 'http://localhost:8000',
       '/analytics': 'http://localhost:8000',
       '/rules': 'http://localhost:8000',
+      '/advisor': 'http://localhost:8000',
     }
   }
 })

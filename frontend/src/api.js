@@ -114,3 +114,4 @@ export const getAlerts = (token) => apiFetch('/rules/alerts', token)
 export const chatWithAdvisor = (token, question, history) =>
   apiFetch('/advisor/chat', token, { method: 'POST', body: JSON.stringify({ question, history }) })
 export const getMonthlyTrend = (token, months = 6) => apiFetch('/analytics/monthly-trend?months=' + months, token)
+export const changePassword = (token, current_password, new_password) => apiFetch('/auth/password', token, { method: 'PUT', body: JSON.stringify({ current_password, new_password }) })
