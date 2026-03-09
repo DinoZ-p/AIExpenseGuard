@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -11,6 +11,12 @@ import SettingsPage from './pages/SettingsPage'
 
 function App() {
   const { token, logout } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/')
+  }
 
   if (!token) return <LoginPage />
 
@@ -27,7 +33,7 @@ function App() {
         <NavLink to="/coach">AI Advisor</NavLink>
         <NavLink to="/settings">Settings</NavLink>
         <hr />
-        <button onClick={logout}>Logout</button>
+        <button onClick={handleLogout}>Logout</button>
       </nav>
       <main className="content">
         <Routes>
