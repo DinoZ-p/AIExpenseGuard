@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
 import { loginUser, registerUser } from '../api'
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isRegistering, setIsRegistering] = useState(false)
@@ -18,6 +20,7 @@ export default function LoginPage() {
       }
       const data = await loginUser(email, password)
       login(data.access_token)
+      navigate('/')
     } catch (err) {
       setError(err.message)
     }
