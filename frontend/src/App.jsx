@@ -1,4 +1,4 @@
-import { Routes, Route, Link, Navigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -18,14 +18,14 @@ function App() {
     <div className="app">
       <nav className="sidebar">
         <h2>Expense Guard</h2>
-        <Link to="/">Dashboard</Link>
-        <Link to="/transactions">Transactions</Link>
-        <Link to="/categories">Categories</Link>
-        <Link to="/budgets">Budgets</Link>
-        <Link to="/goals">Goals</Link>
+        <NavLink to="/" end>Dashboard</NavLink>
+        <NavLink to="/transactions">Transactions</NavLink>
+        <NavLink to="/categories">Categories</NavLink>
+        <NavLink to="/budgets">Budgets</NavLink>
+        <NavLink to="/goals">Goals</NavLink>
         <hr />
-        <Link to="/coach">AI Advisor</Link>
-        <Link to="/settings">Settings</Link>
+        <NavLink to="/coach">AI Advisor</NavLink>
+        <NavLink to="/settings">Settings</NavLink>
         <hr />
         <button onClick={logout}>Logout</button>
       </nav>

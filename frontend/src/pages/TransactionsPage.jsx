@@ -12,6 +12,8 @@ export default function TransactionsPage() {
   const [importMsg, setImportMsg] = useState('')
   const [editing, setEditing] = useState({})
   const [page, setPage] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     category_id: '', amount: '', direction: 'expense', date: '', merchant: '', note: ''
   })
@@ -19,18 +21,24 @@ export default function TransactionsPage() {
     category_id: '', direction: '', start_date: '', end_date: '', merchant: ''
   })
 
-  function load(pg = page) {
-    const params = {
-      skip: pg * PAGE_SIZE,
-      limit: PAGE_SIZE,
-      ...(filters.category_id && { category_id: filters.category_id }),
-      ...(filters.direction && { direction: filters.direction }),
-      ...(filters.start_date && { start_date: filters.start_date }),
-      ...(filters.end_date && { end_date: filters.end_date }),
-      ...(filters.merchant && { merchant: filters.merchant }),
+  async function load(pg = page) {
+    setLoading(true)
+    try {
+      const params = {
+        skip: pg * PAGE_SIZE,
+        limit: PAGE_SIZE,
+        ...(filters.category_id && { category_id: filters.category_id }),
+        ...(filters.direction && { direction: filters.direction }),
+        ...(filters.start_date && { start_date: filters.start_date }),
+        ...(filters.end_date && { end_date: filters.end_date }),
+        ...(filters.merchant && { merchant: filters.merchant }),
+      }
+      const [txns, cats] = await Promise.all([getTransactions(token, params), getCategories(token)])
+      setTransactions(txns)
+      setCategories(cats)
+    } finally {
+      setLoading(false)
     }
-    getTransactions(token, params).then(setTransactions)
-    getCategories(token).then(setCategories)
   }
 
   useEffect(() => { load(0); setPage(0) }, [token])
@@ -55,13 +63,18 @@ export default function TransactionsPage() {
 
   async function handleAdd(e) {
     e.preventDefault()
-    await createTransaction(token, {
-      ...form,
-      category_id: parseInt(form.category_id),
-      amount: parseFloat(form.amount),
-    })
-    setForm({ category_id: '', amount: '', direction: 'expense', date: '', merchant: '', note: '' })
-    load()
+    setError('')
+    try {
+      await createTransaction(token, {
+        ...form,
+        category_id: parseInt(form.category_id),
+        amount: parseFloat(form.amount),
+      })
+      setForm({ category_id: '', amount: '', direction: 'expense', date: '', merchant: '', note: '' })
+      load()
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   async function handleDelete(id) {
@@ -101,11 +114,14 @@ export default function TransactionsPage() {
 
   const catName = (id) => categories.find(c => c.id === id)?.name || id || 'Uncategorized'
 
+  if (loading && transactions.length === 0) return <div className="loading">Loading transactions…</div>
+
   return (
     <div>
       <h1>Transactions</h1>
 
       <h3>Add Transaction</h3>
+      {error && <div className="msg-error">{error}</div>}
       <form onSubmit={handleAdd} className="form-row">
         <label>Category
           <select value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })} required>

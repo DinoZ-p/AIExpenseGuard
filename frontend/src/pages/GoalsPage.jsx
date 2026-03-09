@@ -9,19 +9,25 @@ export default function GoalsPage() {
   const [monthlySavings, setMonthlySavings] = useState('')
   const [savedAmount, setSavedAmount] = useState(0)
   const [editingAmount, setEditingAmount] = useState({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     title: '', target_amount: '', target_date: '', priority: '3', type: 'mid'
   })
 
-  function load() { getGoals(token).then(setGoals) }
-
-  useEffect(() => {
-    load()
-    getMe(token).then(user => {
+  async function load() {
+    setLoading(true)
+    try {
+      const [goalsData, user] = await Promise.all([getGoals(token), getMe(token)])
+      setGoals(goalsData)
       setMonthlySavings(user.monthly_savings.toString())
       setSavedAmount(user.monthly_savings)
-    })
-  }, [token])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [token])
 
   async function handleSaveSavings(e) {
     e.preventDefault()
@@ -34,13 +40,18 @@ export default function GoalsPage() {
 
   async function handleAdd(e) {
     e.preventDefault()
-    await createGoal(token, {
-      ...form,
-      target_amount: parseFloat(form.target_amount),
-      priority: parseInt(form.priority),
-    })
-    setForm({ title: '', target_amount: '', target_date: '', priority: '3', type: 'mid' })
-    load()
+    setError('')
+    try {
+      await createGoal(token, {
+        ...form,
+        target_amount: parseFloat(form.target_amount),
+        priority: parseInt(form.priority),
+      })
+      setForm({ title: '', target_amount: '', target_date: '', priority: '3', type: 'mid' })
+      load()
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   async function handleUpdateAmount(goalId) {
@@ -62,6 +73,8 @@ export default function GoalsPage() {
     const result = await getGoalProjection(token, goalId)
     setProjections(prev => ({ ...prev, [goalId]: result }))
   }
+
+  if (loading) return <div className="loading">Loading goals…</div>
 
   return (
     <div>
@@ -104,6 +117,7 @@ export default function GoalsPage() {
         </label>
         <button type="submit">Add</button>
       </form>
+      {error && <div className="msg-error">{error}</div>}
 
       <table>
         <thead>

@@ -6,24 +6,37 @@ export default function BudgetsPage() {
   const { token } = useAuth()
   const [budgets, setBudgets] = useState([])
   const [categories, setCategories] = useState([])
-  const [editing, setEditing] = useState({})  // { budgetId: { period, limit_amount } }
+  const [editing, setEditing] = useState({})
   const [form, setForm] = useState({ category_id: '', period: 'monthly', limit_amount: '' })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  function load() {
-    getBudgets(token).then(setBudgets)
-    getCategories(token).then(setCategories)
+  async function load() {
+    setLoading(true)
+    try {
+      const [b, c] = await Promise.all([getBudgets(token), getCategories(token)])
+      setBudgets(b)
+      setCategories(c)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [token])
 
   async function handleAdd(e) {
     e.preventDefault()
-    await createBudget(token, {
-      ...form,
-      category_id: parseInt(form.category_id),
-      limit_amount: parseFloat(form.limit_amount),
-    })
-    setForm({ category_id: '', period: 'monthly', limit_amount: '' })
-    load()
+    setError('')
+    try {
+      await createBudget(token, {
+        ...form,
+        category_id: parseInt(form.category_id),
+        limit_amount: parseFloat(form.limit_amount),
+      })
+      setForm({ category_id: '', period: 'monthly', limit_amount: '' })
+      load()
+    } catch (e) {
+      setError(e.message)
+    }
   }
 
   async function handleDelete(id) {
@@ -47,6 +60,8 @@ export default function BudgetsPage() {
   }
 
   const catName = (id) => categories.find(c => c.id === id)?.name || id
+
+  if (loading) return <div className="loading">Loading budgets…</div>
 
   return (
     <div>
@@ -72,6 +87,7 @@ export default function BudgetsPage() {
         </label>
         <button type="submit">Add</button>
       </form>
+      {error && <div className="msg-error">{error}</div>}
 
       <table>
         <thead><tr><th>Category</th><th>Period</th><th>Limit</th><th></th></tr></thead>

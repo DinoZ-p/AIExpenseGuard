@@ -25,19 +25,23 @@ export default function LoginPage() {
 
   return (
     <div className="login-page">
-      <h1>Expense Guard</h1>
-      <h3>{isRegistering ? 'Register' : 'Login'}</h3>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button type="submit">{isRegistering ? 'Register' : 'Login'}</button>
-      </form>
-      <p>
-        <a href="#" onClick={(e) => { e.preventDefault(); setIsRegistering(!isRegistering) }}>
-          {isRegistering ? 'Already have an account? Login' : 'Need an account? Register'}
-        </a>
-      </p>
+      <div className="card">
+        <div className="login-logo">Expense Guard</div>
+        <div className="login-subtitle">Personal finance, simplified</div>
+        <h3 style={{ textAlign: 'center', marginBottom: 20 }}>{isRegistering ? 'Create account' : 'Sign in'}</h3>
+        {error && <div className="msg-error">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <input placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
+          <button type="submit" className="btn-primary">{isRegistering ? 'Register' : 'Login'}</button>
+        </form>
+        <div className="login-toggle">
+          {isRegistering ? 'Already have an account? ' : "Don't have an account? "}
+          <a href="#" onClick={e => { e.preventDefault(); setIsRegistering(!isRegistering); setError('') }}>
+            {isRegistering ? 'Sign in' : 'Register'}
+          </a>
+        </div>
+      </div>
     </div>
   )
 }

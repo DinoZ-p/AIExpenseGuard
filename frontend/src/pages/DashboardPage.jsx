@@ -20,11 +20,22 @@ export default function DashboardPage() {
   const [spending, setSpending] = useState([])
   const [alerts, setAlerts] = useState([])
   const [trend, setTrend] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  function load() {
-    getSpending(token, { start_date: startDate, end_date: endDate }).then(setSpending)
-    getAlerts(token).then(setAlerts)
-    getMonthlyTrend(token).then(setTrend)
+  async function load() {
+    setLoading(true)
+    try {
+      const [s, a, t] = await Promise.all([
+        getSpending(token, { start_date: startDate, end_date: endDate }),
+        getAlerts(token),
+        getMonthlyTrend(token),
+      ])
+      setSpending(s)
+      setAlerts(a)
+      setTrend(t)
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [token])
@@ -34,6 +45,8 @@ export default function DashboardPage() {
   const essentialSpent = spending.filter(s => s.is_essential).reduce((sum, s) => sum + s.total, 0)
   const nonEssentialSpent = totalSpent - essentialSpent
   const maxTrend = Math.max(...trend.map(t => t.total), 1)
+
+  if (loading) return <div className="loading">Loading dashboard…</div>
 
   return (
     <div>
