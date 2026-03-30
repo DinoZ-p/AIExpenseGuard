@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 1440
     openai_api_key: str = ""
+    redis_url: str = "redis://localhost:6379/0"
 
     class Config:
         env_file = ".env"
